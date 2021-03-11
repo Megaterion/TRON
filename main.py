@@ -5,6 +5,7 @@
 
 import sys
 import pygame
+import os
 from pygame.locals import *
 
 
@@ -103,40 +104,35 @@ def summonPlayer():
     objects.append(p2)
 
     if player_count >= 3:
-        p3 = Player(WIDTH / 2, HEIGHT  * 0.75, (0, -2), P3_COLOUR)
+        p3 = Player(WIDTH / 2, HEIGHT * 0.75, (0, -2), P3_COLOUR)
         objects.append(p3)
-
-def draw_text(text, font, color, surface, x, y):
-    textobj = font.render(text, 1, color)
-    textrect = textobj.get_rect()
-    textrect.topleft = (x, y)
-    surface.blit(textobj, textrect)
 
 
 def main_menu():
     pygame.mixer.music.load(menu_music)
     pygame.mixer.music.play(-1)
 
+    click = False
+
     while True:
-        menu_movie.set_display(WIN)
-        menu_movie.play
-
-
-        #WIN.fill(BLACK)
-        draw_text('main menu', font, (255, 255, 255), WIN, 20, 20)
+        WIN.blit(BG, (0, 0))
 
         mx, my = pygame.mouse.get_pos()
 
-        button_1 = pygame.Rect(50, 100, 200, 50)
-        button_2 = pygame.Rect(50, 200, 200, 50)
+        button_1 = pygame.Rect(WIDTH * 0.41, HEIGHT * 0.58, WIDTH * 0.18, HEIGHT * 0.06)
+        button_2 = pygame.Rect(WIDTH * 0.375, HEIGHT * 0.71, WIDTH * 0.245, HEIGHT * 0.06)
+        button_3 = pygame.Rect(WIDTH * 0.43, HEIGHT * 0.837, WIDTH * 0.14, HEIGHT * 0.05)
+
         if button_1.collidepoint((mx, my)):
             if click:
                 game()
         if button_2.collidepoint((mx, my)):
             if click:
                 options()
-        pygame.draw.rect(WIN, (255, 0, 0), button_1)
-        pygame.draw.rect(WIN, (255, 0, 0), button_2)
+        if button_3.collidepoint((mx, my)):
+            if click:
+                pygame.quit()
+                sys.exit()
 
         click = False
         for event in pygame.event.get():
@@ -156,6 +152,7 @@ def main_menu():
 
 
 def game():
+    global boost1, boost2, boost3
     running = True
 
     while running:
@@ -176,14 +173,16 @@ def game():
                     sys.exit()
 
                 elif event.type == pygame.KEYUP:
-                    # Player 1
-                    if event.key == pygame.K_TAB:
-                        objects[0].boost = False
-                    # Player 2
-                    if event.key == pygame.K_RSHIFT:
-                        objects[1].boost = False
-                    # Player 3
-                    #if event.key == pygame.K_
+                    for o in objects:
+                        # Player 1
+                        if o.colour == P1_COLOUR and event.key == pygame.K_TAB:
+                            o.boost = False
+                        # Player 2
+                        if o.colour == P2_COLOUR and event.key == pygame.K_RSHIFT:
+                            o.boost = False
+                        # Player 3
+                        if o.colour == P3_COLOUR and event.key == pygame.K_u:
+                            o.boost = False
 
                 elif event.type == pygame.KEYDOWN:
                     if event.key == pygame.K_ESCAPE:
@@ -204,9 +203,9 @@ def game():
                                 o.bearing = (-2, 0)
                             elif event.key == pygame.K_d and o.bearing != (-2, 0):
                                 o.bearing = (2, 0)
-                            elif event.key == pygame.K_TAB:
-                                o.boost = True
                             elif event.key == pygame.K_q:
+                                o.boost = True
+                            elif event.key == pygame.K_TAB:
                                 o.shoot()
 
                         # Player 2
@@ -219,24 +218,24 @@ def game():
                                 o.bearing = (-2, 0)
                             elif event.key == pygame.K_RIGHT and o.bearing != (-2, 0):
                                 o.bearing = (2, 0)
-                            elif event.key == pygame.K_MINUS:
-                                o.boost = True
                             elif event.key == pygame.K_RSHIFT:
+                                o.boost = True
+                            elif event.key == pygame.K_MINUS:
                                 o.shoot()
 
                         # Player 3
                         elif o.colour == P3_COLOUR:
-                            if event.key == pygame.K_UP and o.bearing != (0, 2):
+                            if event.key == pygame.K_i and o.bearing != (0, 2):
                                 o.bearing = (0, -2)
-                            elif event.key == pygame.K_DOWN and o.bearing != (0, -2):
+                            elif event.key == pygame.K_k and o.bearing != (0, -2):
                                 o.bearing = (0, 2)
-                            elif event.key == pygame.K_LEFT and o.bearing != (2, 0):
+                            elif event.key == pygame.K_j and o.bearing != (2, 0):
                                 o.bearing = (-2, 0)
-                            elif event.key == pygame.K_RIGHT and o.bearing != (-2, 0):
+                            elif event.key == pygame.K_l and o.bearing != (-2, 0):
                                 o.bearing = (2, 0)
-                            elif event.key == pygame.K_MINUS:
+                            elif event.key == pygame.K_u:
                                 o.boost = True
-                            elif event.key == pygame.K_RSHIFT:
+                            elif event.key == pygame.K_z:
                                 o.shoot()
 
             WIN.fill(BLACK)  # leert das Fensteer
@@ -253,7 +252,7 @@ def game():
                 l.coll()
 
             for o in objects:
-                if o.boost == True:
+                if o.boost:
                     if o.boostlimit - 1 >= 0:
                         o.boostlimit = o.boostlimit - 1
                         o.speed = 2
@@ -269,7 +268,7 @@ def game():
                         o.j = 0
 
                 if o.speed == 1:
-                    if o.i == True:
+                    if o.i:
                         o.move()
                         o.draw()
                         o.coll()
@@ -281,21 +280,46 @@ def game():
                     o.draw()
                     o.coll()
 
-            # zeigt die verbleibende Boostdauer an
-            boost_text = boost_font.render(
-                '{0}                           {1}'.format(objects[0].boostlimit, objects[1].boostlimit), 1,
-                (255, 153, 51))
-            boost_text_pos = boost_text.get_rect()
-            boost_text_pos.centerx = int(WIDTH / 2)
-            boost_text_pos.centery = int(offset / 2)
-            WIN.blit(boost_text, boost_text_pos)
+            if o.colour == P1_COLOUR:
+                boost1 = o.boostlimit
+            elif o.colour == P2_COLOUR:
+                boost2 = o.boostlimit
+            elif o.colour == P3_COLOUR:
+                boost3 = o.boostlimit
 
-            # Zeigt den aktuellen score an
-            score_text = font.render('{0} : {1}'.format(player_score[0], player_score[1]), 1, (255, 153, 51))
-            score_text_pos = score_text.get_rect()
-            score_text_pos.centerx = int(WIDTH / 2)
-            score_text_pos.centery = int(offset / 2)
-            WIN.blit(score_text, score_text_pos)
+            # Anzeige für 2 Spieler
+            if player_count == 2:
+                # zeigt die verbleibende Boostdauer an
+                boost_text = boost_font.render('{0}                           {1}'.format(boost1, boost2), 1, (255, 153, 51))
+                boost_text_pos = boost_text.get_rect()
+                boost_text_pos.centerx = int(WIDTH / 2)
+                boost_text_pos.centery = int(offset / 2)
+                WIN.blit(boost_text, boost_text_pos)
+
+                # Zeigt den aktuellen score an
+                score_text = font.render('{0} : {1}'.format(player_score[0], player_score[1]), 1, (255, 153, 51))
+                score_text_pos = score_text.get_rect()
+                score_text_pos.centerx = int(WIDTH / 2)
+                score_text_pos.centery = int(offset / 2)
+                WIN.blit(score_text, score_text_pos)
+
+            # Anzeige für 3 Spieler
+            if player_count == 3:
+
+                # zeigt die verbleibende Boostdauer an
+                boost_text = boost_font.render('{0}       {1}     {2}'.format(boost1, boost2, boost3), 1, (255, 153, 51))
+                boost_text_pos = boost_text.get_rect()
+                boost_text_pos.centerx = int(WIDTH / 2)
+                boost_text_pos.centery = int(offset / 2)
+                WIN.blit(boost_text, boost_text_pos)
+
+                # Zeigt den aktuellen score an
+                score_text = font.render('{0} : {1} : {2}'.format(player_score[0], player_score[1], player_score[2]), 1,
+                                         (255, 153, 51))
+                score_text_pos = score_text.get_rect()
+                score_text_pos.centerx = int(WIDTH / 2)
+                score_text_pos.centery = int(offset / 2)
+                WIN.blit(score_text, score_text_pos)
 
             pygame.display.flip()
             mainClock.tick(FPS)
@@ -308,7 +332,6 @@ def options():
     while running:
         WIN.fill(BLACK)
 
-        draw_text('options', font, (255, 255, 255), WIN, 20, 20)
         for event in pygame.event.get():
             if event.type == QUIT:
                 pygame.quit()
@@ -323,8 +346,6 @@ def options():
 
 ###############
 
-# Menu
-click = False
 mainClock = pygame.time.Clock()
 FPS = 120
 pygame.init()
@@ -339,9 +360,8 @@ boost_font = pygame.font.SysFont(None, 36)
 font = pygame.font.SysFont(None, 72)
 lost_font = pygame.font.SysFont(None, 60)
 
-# Game
 BLACK = (0, 0, 0)
-WHITE = (255, 255, 255)
+WHITE = (255, 255, 255, 255)
 P1_COLOUR = (0, 255, 255)
 P2_COLOUR = (255, 187, 39)
 P3_COLOUR = (210, 0, 3)
@@ -349,17 +369,18 @@ P3_COLOUR = (210, 0, 3)
 player_count = 3
 player_score = [0, 0, 0]
 
-path = []           # Liste mit allen Pfadteilen
-path_colour = []    # Liste mit Farben der Pfadteile
-objects = []        # Liste mit allen Playern
-las = []            # Liste mit allen Lasern
+path = []  # Liste mit allen Pfadteilen
+path_colour = []  # Liste mit Farben der Pfadteile
+objects = []  # Liste mit allen Playern
+las = []  # Liste mit allen Lasern
 
-wall_rects = [pygame.Rect([0, offset, 15, HEIGHT]),             # links
-              pygame.Rect([0, offset, WIDTH, 15]),              # oben
-              pygame.Rect([WIDTH - 15, offset, 15, HEIGHT]),    # rechts
-              pygame.Rect([0, HEIGHT - 15, WIDTH, 15])          # unten
+wall_rects = [pygame.Rect([0, offset, 15, HEIGHT]),  # links
+              pygame.Rect([0, offset, WIDTH, 15]),  # oben
+              pygame.Rect([WIDTH - 15, offset, 15, HEIGHT]),  # rechts
+              pygame.Rect([0, HEIGHT - 15, WIDTH, 15])  # unten
               ]
-menu_movie = pygame.movie.Movie("Tron_Assets/Tron_menu_movie.MPG")
+
+BG = pygame.transform.scale(pygame.image.load(os.path.join("Tron_Assets/Tron_Titlescreen.png")), (WIDTH, HEIGHT))
 menu_music = "Tron_Assets/Tron_menu.mp3"
 game_music = "Tron_Assets/Lightcycle_Race.mp3"
 crash_sound = pygame.mixer.Sound("Tron_Assets/Crash_sound.mp3")
