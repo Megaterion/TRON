@@ -154,6 +154,8 @@ def main_menu():
 def game():
     running = True
 
+    pygame.mouse.set_visible(False)
+
     while running:
         pygame.mixer.music.load(game_music)
         pygame.mixer.music.play(-1)
@@ -187,6 +189,7 @@ def game():
                     if event.key == pygame.K_ESCAPE:
                         game_is_running = False
                         running = False
+                        pygame.mouse.set_visible(True)
 
                         pygame.mixer.music.load(menu_music)
                         pygame.mixer.music.play(-1)
