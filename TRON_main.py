@@ -242,9 +242,11 @@ def game():
 
             WIN.fill(BLACK)  # leert das Fenster
 
+            # Mauer erzeugen
             for o in walls:
-                pygame.draw.rect(WIN, (42, 42, 42), o, 0)  # Mauer erzeugen
+                pygame.draw.rect(WIN, (42, 42, 42), o, 0)
 
+            # Pfade erzeugen
             for o in range(len(path)):
                 pygame.draw.rect(WIN, path_colour[o], path[o], 0)
 
